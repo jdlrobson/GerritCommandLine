@@ -23,6 +23,7 @@ from datetime import datetime as dt
 import time
 import subprocess
 import sys
+import argparse
 
 
 def calculate_age(timestamp):
@@ -92,13 +93,19 @@ def get_patches(project):
                      key=operator.itemgetter("score", "age"), reverse=True)
     return patches
 
-
 if __name__ == '__main__':
-    try:
-        project = sys.argv[1]
-    except IndexError:
+    help = {
+        'project': 'A valid project name on http://gerrit.wikimedia.org'
+    }
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--project', help=help['project'])
+    args = parser.parse_args()
+    project = args.project
+    if project is None:
         print "Provide a project name as a parameter e.g. mediawiki/core"
+        parser.print_help()
         sys.exit()
+
     RED = '\033[91m'
     GREEN = '\033[92m'
     ENDC = '\033[0m'
