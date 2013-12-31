@@ -95,10 +95,12 @@ def get_patches(project):
 
 if __name__ == '__main__':
     help = {
-        'project': 'A valid project name on http://gerrit.wikimedia.org'
+        'project': 'A valid project name on http://gerrit.wikimedia.org',
+        'action': 'Action to perform on patchset. Values: checkout|open'
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', help=help['project'])
+    parser.add_argument('--action', help=help['action'], default='checkout')
     args = parser.parse_args()
     project = args.project
     if project is None:
@@ -110,6 +112,12 @@ if __name__ == '__main__':
     GREEN = '\033[92m'
     ENDC = '\033[0m'
     BOLD = "\033[1m"
+    try:
+        action = args.action
+        if action is None:
+            action = 'checkout'
+    except KeyError:
+        action = 'checkout'
 
     patches = get_patches(project)
     if len(patches) == 0:
@@ -139,11 +147,19 @@ if __name__ == '__main__':
         print '%s: %s (by %s, %s days old) [%s]' % args
         key += 1
     print '\n'
-    prompt = 'Enter number to review (Press enter to exit): '
+    if action == 'open':
+        prompt = 'Enter number of patchset to open'
+    else:
+        prompt = 'Enter number of patchset to checkout'
+    prompt += ' (Press enter to exit):'
     choice = raw_input(prompt)
     try:
         change = patches[int(choice) - 1]
-        subprocess.call(["git", "review", "-d", change["id"]])
-        print '\nReview this patch at:\n%s' % change["url"]
+        if action == 'open':
+            #FIXME: support unix?
+            subprocess.call(["open", change["url"]])
+        else:
+            subprocess.call(["git", "review", "-d", change["id"]])
+            print '\nReview this patch at:\n%s' % change["url"]
     except ValueError:
         pass
