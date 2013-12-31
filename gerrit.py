@@ -74,6 +74,36 @@ def query_gerrit(project):
     return data
 
 
+def filter_patches(patches, args):
+    result = []
+
+    def filter_by_score(patch):
+        if patch['score'] > args.gtscore and \
+           patch['score'] < args.ltscore:
+            return True
+        else:
+            return False
+
+    def filter_by_user(patch):
+        if args.byuser:
+            return patch['user'] == args.byuser
+        else:
+            return True
+
+    def filter_by_age(patch):
+        age = patch['age']
+        if args.ltage:
+            return age > args.gtage and age < args.ltage
+        else:
+            return age > args.gtage
+
+    for patch in patches:
+        if filter_by_score(patch) and \
+           filter_by_user(patch) and filter_by_age(patch):
+            result.append(patch)
+    return result
+
+
 def get_patches(project):
     patches = []
     for change in query_gerrit(project):
@@ -96,11 +126,22 @@ def get_patches(project):
 if __name__ == '__main__':
     help = {
         'project': 'A valid project name on http://gerrit.wikimedia.org',
-        'action': 'Action to perform on patchset. Values: checkout|open'
+        'action': 'Action to perform on patchset. Values: checkout|open',
+        'gtscore': 'Only show patches with a score greater than this value',
+        'ltscore': 'Only show patches with a score less than this value',
+        'byuser': 'Only show patches from this user',
+        'ltage': 'Only show patches with an age less than this value',
+        'gtage': 'Only show patches with an age greater than this value',
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', help=help['project'])
     parser.add_argument('--action', help=help['action'], default='checkout')
+    parser.add_argument('--gtscore',
+                        help=help['gtscore'], default=-3, type=int)
+    parser.add_argument('--ltscore', help=help['gtscore'], default=3, type=int)
+    parser.add_argument('--gtage', help=help['gtage'], default=-1, type=int)
+    parser.add_argument('--ltage', help=help['ltage'], type=int)
+    parser.add_argument('--byuser', help=help['byuser'])
     args = parser.parse_args()
     project = args.project
     if project is None:
@@ -125,6 +166,10 @@ if __name__ == '__main__':
 - did you type it correctly?" % project
         sys.exit()
 
+    patches = filter_patches(patches, args)
+    if len(patches) == 0:
+        print "No patches met the filter."
+        sys.exit()
     #start on 1 since 1 is the easiest key to press on the keyboard
     key = 1
     last_score = 3
