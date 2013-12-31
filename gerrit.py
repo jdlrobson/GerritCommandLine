@@ -112,6 +112,11 @@ if __name__ == '__main__':
     BOLD = "\033[1m"
 
     patches = get_patches(project)
+    if len(patches) == 0:
+        print "No patches found for project %s \
+- did you type it correctly?" % project
+        sys.exit()
+
     #start on 1 since 1 is the easiest key to press on the keyboard
     key = 1
     last_score = 3
