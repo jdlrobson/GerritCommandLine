@@ -85,6 +85,8 @@ def filter_patches(patches, args):
             return False
 
     def filter_by_user(patch):
+        if args.excludeuser:
+            return patch['user'] != args.excludeuser
         if args.byuser:
             return patch['user'] == args.byuser
         else:
@@ -130,6 +132,7 @@ if __name__ == '__main__':
         'gtscore': 'Only show patches with a score greater than this value',
         'ltscore': 'Only show patches with a score less than this value',
         'byuser': 'Only show patches from this user',
+        'excludeuser': 'Do not show patches from this user',
         'ltage': 'Only show patches with an age less than this value',
         'gtage': 'Only show patches with an age greater than this value',
     }
@@ -142,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--gtage', help=help['gtage'], default=-1, type=int)
     parser.add_argument('--ltage', help=help['ltage'], type=int)
     parser.add_argument('--byuser', help=help['byuser'])
+    parser.add_argument('--excludeuser', help=help['excludeuser'])
     args = parser.parse_args()
     project = args.project
     if project is None:
