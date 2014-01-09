@@ -138,7 +138,8 @@ if __name__ == '__main__':
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', help=help['project'])
-    parser.add_argument('positional_project', help=help['project'])
+    parser.add_argument('positional_project', nargs='?', default=None,
+                        help=help['project'])
     parser.add_argument('--action', help=help['action'], default='checkout')
     parser.add_argument('--gtscore',
                         help=help['gtscore'], default=-3, type=int)
