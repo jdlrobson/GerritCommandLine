@@ -195,9 +195,9 @@ if __name__ == '__main__':
         else:
             color = GREEN
         score = '%s%s%s%s' % (color, BOLD, score, ENDC)
-        args = (key, patch["subject"], patch["user"],
+        args = (key, patch["id"], patch["subject"], patch["user"],
                 patch["age"], score)
-        print '%s: %s (by %s, %s days old) [%s]' % args
+        print '%02d: (Id: %07s) %s (by %s, %s days old) [%s]' % args
         key += 1
     print '\n'
     if action == 'open':
