@@ -209,8 +209,17 @@ if __name__ == '__main__':
     try:
         change = patches[int(choice) - 1]
         if action == 'open':
-            #FIXME: support unix?
-            subprocess.call(["open", change["url"]])
+            try:
+                import platform
+                if platform.system() == 'Linux':
+                    import os
+                    if os.environ['DESKTOP_SESSION'] == 'gnome':
+                        subprocess.call(["gnome-www-browser", change["url"]])
+                else:
+                    subprocess.call(["open", change["url"]])
+            except KeyError as e:
+                # Try to fallback gracefully
+                subprocess.call(["open", change["url"]])
         else:
             subprocess.call(["git", "review", "-d", change["id"]])
             print '\nReview this patch at:\n%s' % change["url"]
