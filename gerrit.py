@@ -138,6 +138,7 @@ if __name__ == '__main__':
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', help=help['project'])
+    parser.add_argument('positional_project', help=help['project'])
     parser.add_argument('--action', help=help['action'], default='checkout')
     parser.add_argument('--gtscore',
                         help=help['gtscore'], default=-3, type=int)
@@ -147,7 +148,10 @@ if __name__ == '__main__':
     parser.add_argument('--byuser', help=help['byuser'])
     parser.add_argument('--excludeuser', help=help['excludeuser'])
     args = parser.parse_args()
-    project = args.project
+    if args.project:
+        project = args.project
+    elif args.positional_project:
+        project = args.positional_project
     if project is None:
         print "Provide a project name as a parameter e.g. mediawiki/core"
         parser.print_help()
