@@ -45,6 +45,9 @@ def calculate_score(change):
     status = 0
     reviewers = []
 
+    if "approved" in reviews:
+        likes += 2
+
     if "recommended" in reviews:
         likes += 1
 
