@@ -25,6 +25,13 @@ import subprocess
 import sys
 import argparse
 
+def get_project():
+    command = "git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//'"
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+    #Launch the shell command:
+    output, error = process.communicate()
+    return "/".join( output.split('/')[-3:] ).replace( '\n', '' )
 
 def calculate_age(timestamp):
     time_string = timestamp[0:18]
@@ -152,9 +159,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
     project = args.project
     if project is None:
-        print "Provide a project name as a parameter e.g. mediawiki/core"
-        parser.print_help()
-        sys.exit()
+        project = get_project()
+        if project is None:
+            print "Provide a project name as a parameter e.g. mediawiki/core"
+            parser.print_help()
+            sys.exit()
 
     RED = '\033[91m'
     GREEN = '\033[92m'
