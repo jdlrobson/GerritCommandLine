@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 '''
 Copyright [2013] [Jon Robson]
@@ -148,6 +148,8 @@ if __name__ == '__main__':
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--project', help=help['project'])
+    parser.add_argument('positional_project', nargs='?', default=None,
+                        help=help['project'])
     parser.add_argument('--action', help=help['action'], default='checkout')
     parser.add_argument('--gtscore',
                         help=help['gtscore'], default=-3, type=int)
@@ -157,7 +159,10 @@ if __name__ == '__main__':
     parser.add_argument('--byuser', help=help['byuser'])
     parser.add_argument('--excludeuser', help=help['excludeuser'])
     args = parser.parse_args()
-    project = args.project
+    if args.project:
+        project = args.project
+    elif args.positional_project:
+        project = args.positional_project
     if project is None:
         project = get_project()
         if project is None:
@@ -203,9 +208,9 @@ if __name__ == '__main__':
         else:
             color = GREEN
         score = '%s%s%s%s' % (color, BOLD, score, ENDC)
-        args = (key, patch["subject"], patch["user"],
+        args = (key, patch["id"], patch["subject"], patch["user"],
                 patch["age"], score)
-        print '%s: %s (by %s, %s days old) [%s]' % args
+        print '%02d: (Id: %07s) %s (by %s, %s days old) [%s]' % args
         key += 1
     print '\n'
     if action == 'open':
@@ -217,8 +222,17 @@ if __name__ == '__main__':
     try:
         change = patches[int(choice) - 1]
         if action == 'open':
-            #FIXME: support unix?
-            subprocess.call(["open", change["url"]])
+            try:
+                import platform
+                if platform.system() == 'Linux':
+                    import os
+                    if os.environ['DESKTOP_SESSION'] == 'gnome':
+                        subprocess.call(["gnome-www-browser", change["url"]])
+                else:
+                    subprocess.call(["open", change["url"]])
+            except KeyError as e:
+                # Try to fallback gracefully
+                subprocess.call(["open", change["url"]])
         else:
             subprocess.call(["git", "review", "-d", change["id"]])
             print '\nReview this patch at:\n%s' % change["url"]
