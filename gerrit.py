@@ -133,16 +133,17 @@ def get_patches(project):
                      key=operator.itemgetter("score", "age"), reverse=True)
     return patches
 
-def choose_project():
+def choose_project(match_pattern=None):
     url = "https://gerrit.wikimedia.org/r/projects/?type=ALL&all&d"
     projects = query_gerrit(url)
     keys = sorted(iter(projects))
     index = 0
     available = []
     for project in keys:
-        print '#%s: %s'%(index, project)
-        index += 1
-        available.append(project)
+        if (not match_pattern) or (match_pattern in project):
+            print '#%s: %s'%(index, project)
+            index += 1
+            available.append(project)
 
     prompt = 'Enter number of project'
     prompt += ' (Press enter to exit):'
@@ -165,7 +166,8 @@ if __name__ == '__main__':
         'excludeuser': 'Do not show patches from this user',
         'ltage': 'Only show patches with an age less than this value',
         'gtage': 'Only show patches with an age greater than this value',
-        'list': 'List all available projects'
+        'list': 'List all available projects',
+        'pattern': 'When used alongside list shows only project names that contain the given string'
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--list', help=help['list'], type=bool, default=False)
@@ -180,13 +182,14 @@ if __name__ == '__main__':
     parser.add_argument('--ltage', help=help['ltage'], type=int)
     parser.add_argument('--byuser', help=help['byuser'])
     parser.add_argument('--excludeuser', help=help['excludeuser'])
+    parser.add_argument('--pattern', help=help['pattern'])
     args = parser.parse_args()
     if args.project:
         project = args.project
     elif args.positional_project:
         project = args.positional_project
     elif args.list:
-        project = choose_project()
+        project = choose_project(args.pattern)
     else:
         project = args.project
 
