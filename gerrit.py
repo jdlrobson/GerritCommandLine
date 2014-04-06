@@ -71,10 +71,7 @@ def calculate_score(change):
         status = likes
     return status
 
-
-def query_gerrit(project):
-    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:" \
-        + project + "&n=25&O=1"
+def query_gerrit(url):
     req = urllib2.Request(url)
     req.add_header('Accept',
                    'application/json,application/json,application/jsonrequest')
@@ -82,7 +79,6 @@ def query_gerrit(project):
     resp, data = urllib2.urlopen(req)
     data = json.loads(data)
     return data
-
 
 def filter_patches(patches, args):
     result = []
@@ -118,7 +114,9 @@ def filter_patches(patches, args):
 
 def get_patches(project):
     patches = []
-    for change in query_gerrit(project):
+    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:" \
+        + project + "&n=25&O=1"
+    for change in query_gerrit(url):
         user = change["owner"]["name"]
         subj = change["subject"]
         number = change["_number"]
@@ -135,6 +133,28 @@ def get_patches(project):
                      key=operator.itemgetter("score", "age"), reverse=True)
     return patches
 
+def choose_project():
+    url = "https://gerrit.wikimedia.org/r/projects/?type=ALL&all&d"
+    projects = query_gerrit(url)
+    keys = sorted(iter(projects))
+    index = 0
+    available = []
+    for project in keys:
+        print '#%s: %s'%(index, project)
+        index += 1
+        available.append(project)
+
+    prompt = 'Enter number of project'
+    prompt += ' (Press enter to exit):'
+    choice = raw_input(prompt)
+    if choice:
+        try:
+            return available[int(choice)]
+        except IndexError:
+            return None
+    else:
+        return None
+
 if __name__ == '__main__':
     help = {
         'project': 'A valid project name on http://gerrit.wikimedia.org',
@@ -145,8 +165,10 @@ if __name__ == '__main__':
         'excludeuser': 'Do not show patches from this user',
         'ltage': 'Only show patches with an age less than this value',
         'gtage': 'Only show patches with an age greater than this value',
+        'list': 'List all available projects'
     }
     parser = argparse.ArgumentParser()
+    parser.add_argument('--list', help=help['list'], type=bool, default=False)
     parser.add_argument('--project', help=help['project'])
     parser.add_argument('positional_project', nargs='?', default=None,
                         help=help['project'])
@@ -163,6 +185,11 @@ if __name__ == '__main__':
         project = args.project
     elif args.positional_project:
         project = args.positional_project
+    elif args.list:
+        project = choose_project()
+    else:
+        project = args.project
+
     if project is None:
         project = get_project()
         if project is None:
