@@ -167,7 +167,8 @@ if __name__ == '__main__':
         'ltage': 'Only show patches with an age less than this value',
         'gtage': 'Only show patches with an age greater than this value',
         'list': 'List all available projects',
-        'pattern': 'When used alongside list shows only project names that contain the given string'
+        'pattern': 'When used alongside list shows only project names that contain the given string',
+        'show': 'Show additional information. Valid values: url, id'
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--list', help=help['list'], type=bool, default=False)
@@ -183,6 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--byuser', help=help['byuser'])
     parser.add_argument('--excludeuser', help=help['excludeuser'])
     parser.add_argument('--pattern', help=help['pattern'])
+    parser.add_argument('--show', help=help['show'], type=str, action="append")
     args = parser.parse_args()
     if args.project:
         project = args.project
@@ -238,9 +240,13 @@ if __name__ == '__main__':
         else:
             color = GREEN
         score = '%s%s%s%s' % (color, BOLD, score, ENDC)
-        args = (key, patch["id"], patch["subject"], patch["user"],
+        string_args = (key, patch["subject"], patch["user"],
                 patch["age"], score)
-        print '%02d: (Id: %07s) %s (by %s, %s days old) [%s]' % args
+        print '%02d: %s (by %s, %s days old) [%s]' % string_args
+        if 'url' in args.show:
+            print '\t%s'%patch['url']
+        if 'id' in args.show:
+            print '\t%s'%patch['id']
         key += 1
     print '\n'
     if action == 'open':
