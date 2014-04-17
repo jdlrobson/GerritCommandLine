@@ -184,7 +184,7 @@ if __name__ == '__main__':
     parser.add_argument('--byuser', help=help['byuser'])
     parser.add_argument('--excludeuser', help=help['excludeuser'])
     parser.add_argument('--pattern', help=help['pattern'])
-    parser.add_argument('--show', help=help['show'], type=str, action="append")
+    parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
     args = parser.parse_args()
     if args.project:
         project = args.project
