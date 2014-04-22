@@ -10,6 +10,9 @@ Patchsets that have been around over over 100 days on mediawiki/core repository
 Patchsets that have a -1 or -2 and are more than 10 days old
 `python gerrit.py --project 'mediawiki/core' --gtage 10 --ltscore 0`
 
+Patchsets in core that were not written by users jdlrobson or kaldari
+`python gerrit.py --project 'mediawiki/core' --excludeuser jdlrobson --excludeuser kaldari`
+
 All patchsets by jdlrobson on MobileFrontend extension
 `python gerrit.py --project 'mediawiki/extensions/MobileFrontend' --byuser 'Jdlrobson'`
 

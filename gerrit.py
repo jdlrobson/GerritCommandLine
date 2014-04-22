@@ -92,7 +92,7 @@ def filter_patches(patches, args):
 
     def filter_by_user(patch):
         if args.excludeuser:
-            return patch['user'] != args.excludeuser
+            return patch['user'].lower() not in args.excludeuser
         if args.byuser:
             return patch['user'] == args.byuser
         else:
@@ -175,7 +175,7 @@ def get_parser():
         'gtscore': 'Only show patches with a score greater than this value',
         'ltscore': 'Only show patches with a score less than this value',
         'byuser': 'Only show patches from this user',
-        'excludeuser': 'Do not show patches from this user',
+        'excludeuser': 'Do not show patches from this user (username should be lowercase)',
         'ltage': 'Only show patches with an age less than this value',
         'gtage': 'Only show patches with an age greater than this value',
         'list': 'List all available projects',
@@ -194,7 +194,7 @@ def get_parser():
     parser.add_argument('--gtage', help=help['gtage'], default=-1, type=int)
     parser.add_argument('--ltage', help=help['ltage'], type=int)
     parser.add_argument('--byuser', help=help['byuser'])
-    parser.add_argument('--excludeuser', help=help['excludeuser'])
+    parser.add_argument('--excludeuser', help=help['excludeuser'], action="append", default=[])
     parser.add_argument('--pattern', help=help['pattern'])
     parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
     parser.add_argument('--reviewee', help=help['reviewee'])
@@ -219,6 +219,7 @@ if __name__ == '__main__':
     if args.reviewee:
         if not project:
             args.show.append('project')
+            args.excludeuser.append(args.reviewee.lower())
         patches = get_incoming_patches(args.reviewee, project)
     # A project is mandatory if no reviewee
     else:
