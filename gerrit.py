@@ -111,11 +111,8 @@ def filter_patches(patches, args):
             result.append(patch)
     return result
 
-
-def get_patches(project):
+def get_patches(url):
     patches = []
-    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:" \
-        + project + "&n=25&O=1"
     for change in query_gerrit(url):
         user = change["owner"]["name"]
         subj = change["subject"]
@@ -132,6 +129,19 @@ def get_patches(project):
     patches = sorted(patches,
                      key=operator.itemgetter("score", "age"), reverse=True)
     return patches
+
+def get_incoming_patches(reviewer, project=None):
+    params = 'reviewer:"%s"+is:open'%reviewer
+    if project:
+        params += '+project:"%s"'% project
+
+    url = 'https://gerrit.wikimedia.org/r/changes/?q=%s&n=25&O=1'%params
+    return get_patches(url)
+
+def get_project_patches(project):
+    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:" \
+        + project + "&n=25&O=1"
+    return get_patches(url)
 
 def choose_project(match_pattern=None):
     url = "https://gerrit.wikimedia.org/r/projects/?type=ALL&all&d"
@@ -156,9 +166,22 @@ def choose_project(match_pattern=None):
     else:
         return None
 
+def determine_project(parser, args):
+    if args.project:
+         project = args.project
+    elif args.positional_project:
+         project = args.positional_project
+    elif args.list:
+         project = choose_project(args.pattern)
+    else:
+         project = args.project
+
+    return project
+
 if __name__ == '__main__':
     help = {
         'project': 'A valid project name on http://gerrit.wikimedia.org',
+        'reviewee': 'Show all patches for a given reviewee',
         'action': 'Action to perform on patchset. Values: checkout|open',
         'gtscore': 'Only show patches with a score greater than this value',
         'ltscore': 'Only show patches with a score less than this value',
@@ -185,22 +208,21 @@ if __name__ == '__main__':
     parser.add_argument('--excludeuser', help=help['excludeuser'])
     parser.add_argument('--pattern', help=help['pattern'])
     parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
+    parser.add_argument('--reviewee', help=help['reviewee'])
     args = parser.parse_args()
-    if args.project:
-        project = args.project
-    elif args.positional_project:
-        project = args.positional_project
-    elif args.list:
-        project = choose_project(args.pattern)
-    else:
-        project = args.project
 
-    if project is None:
-        project = get_project()
+    project = determine_project(parser, args)
+    if args.reviewee:
+        patches = get_incoming_patches(args.reviewee, project)
+    # A project is mandatory if no reviewee
+    else:
         if project is None:
-            print "Provide a project name as a parameter e.g. mediawiki/core"
-            parser.print_help()
-            sys.exit()
+            project = get_project()
+            if project is None:
+                print "Provide a project name as a parameter e.g. mediawiki/core"
+                parser.print_help()
+                sys.exit()
+        patches = get_project_patches(project)
 
     RED = '\033[91m'
     GREEN = '\033[92m'
@@ -213,7 +235,6 @@ if __name__ == '__main__':
     except KeyError:
         action = 'checkout'
 
-    patches = get_patches(project)
     if len(patches) == 0:
         print "No patches found for project %s \
 - did you type it correctly?" % project

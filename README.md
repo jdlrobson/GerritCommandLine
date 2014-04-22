@@ -12,3 +12,12 @@ Patchsets that have a -1 or -2 and are more than 10 days old
 
 All patchsets by jdlrobson on MobileFrontend extension
 `python gerrit.py --project 'mediawiki/extensions/MobileFrontend' --byuser 'Jdlrobson'`
+
+All patchsets requesting review from Jdlrobson across all repositories
+gerrit.py --reviewee jdlrobson
+
+All patchsets requesting review from Jdlrobson  across all repositories with a positive score
+gerrit.py --reviewee jdlrobson --gtscore -1
+
+All patchsets requesting review from Jdlrobson in the core mediawiki repository with a positive score
+gerrit.py --reviewee jdlrobson --gtscore -1 --project mediawiki/core
