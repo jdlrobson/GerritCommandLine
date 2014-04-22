@@ -121,6 +121,7 @@ def get_patches(url):
 
         patch = {"user": user,
                  "subject": subj,
+                 "project": change["project"],
                  "score": calculate_score(change),
                  "id": str(number),
                  "url": url,
@@ -216,6 +217,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     project = determine_project(parser, args)
     if args.reviewee:
+        if not project:
+            args.show.append('project')
         patches = get_incoming_patches(args.reviewee, project)
     # A project is mandatory if no reviewee
     else:
@@ -229,6 +232,7 @@ if __name__ == '__main__':
 
     RED = '\033[91m'
     GREEN = '\033[92m'
+    GRAY = '\033[90m'
     ENDC = '\033[0m'
     BOLD = "\033[1m"
     try:
@@ -268,9 +272,11 @@ if __name__ == '__main__':
                 patch["age"], score)
         print '%02d: %s (by %s, %s days old) [%s]' % string_args
         if 'url' in args.show:
-            print '\t%s'%patch['url']
+            print '\t%s%s%s'% (GRAY, patch['url'], ENDC )
         if 'id' in args.show:
-            print '\t%s'%patch['id']
+            print '\t%s%s%s'% (GRAY, patch['id'], ENDC )
+        if 'project' in args.show:
+            print '\t%s%s%s'% (GRAY, patch['project'], ENDC )
         key += 1
     print '\n'
     if action == 'open':
