@@ -166,19 +166,7 @@ def choose_project(match_pattern=None):
     else:
         return None
 
-def determine_project(parser, args):
-    if args.project:
-         project = args.project
-    elif args.positional_project:
-         project = args.positional_project
-    elif args.list:
-         project = choose_project(args.pattern)
-    else:
-         project = args.project
-
-    return project
-
-if __name__ == '__main__':
+def get_parser():
     help = {
         'project': 'A valid project name on http://gerrit.wikimedia.org',
         'reviewee': 'Show all patches for a given reviewee',
@@ -209,8 +197,23 @@ if __name__ == '__main__':
     parser.add_argument('--pattern', help=help['pattern'])
     parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
     parser.add_argument('--reviewee', help=help['reviewee'])
-    args = parser.parse_args()
+    return parser
 
+def determine_project(parser, args):
+    if args.project:
+         project = args.project
+    elif args.positional_project:
+         project = args.positional_project
+    elif args.list:
+         project = choose_project(args.pattern)
+    else:
+         project = args.project
+
+    return project
+
+if __name__ == '__main__':
+    parser = get_parser()
+    args = parser.parse_args()
     project = determine_project(parser, args)
     if args.reviewee:
         patches = get_incoming_patches(args.reviewee, project)
