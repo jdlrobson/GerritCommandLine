@@ -17,10 +17,10 @@ All patchsets by jdlrobson on MobileFrontend extension
 `python gerrit.py --project 'mediawiki/extensions/MobileFrontend' --byuser 'Jdlrobson'`
 
 All patchsets requesting review from Jdlrobson across all repositories
-gerrit.py --reviewee jdlrobson
+`gerrit.py --reviewee jdlrobson`
 
 All patchsets requesting review from Jdlrobson  across all repositories with a positive score
-gerrit.py --reviewee jdlrobson --gtscore -1
+`gerrit.py --reviewee jdlrobson --gtscore -1`
 
 All patchsets requesting review from Jdlrobson in the core mediawiki repository with a positive score
-gerrit.py --reviewee jdlrobson --gtscore -1 --project mediawiki/core
+`gerrit.py --reviewee jdlrobson --gtscore -1 --project mediawiki/core`
