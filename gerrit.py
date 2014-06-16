@@ -105,8 +105,15 @@ def filter_patches(patches, args):
         else:
             return age > args.gtage
 
+    def filter_by_pattern(patch):
+        if args.ignorepattern:
+            return args.ignorepattern not in patch['subject']
+        else:
+            return True
+
     for patch in patches:
         if filter_by_score(patch) and \
+           filter_by_pattern(patch) and \
            filter_by_user(patch) and filter_by_age(patch):
             result.append(patch)
     return result
@@ -173,6 +180,7 @@ def get_parser():
         'reviewee': 'Show all patches for a given reviewee',
         'action': 'Action to perform on patchset. Values: checkout|open',
         'gtscore': 'Only show patches with a score greater than this value',
+        'ignorepattern': 'Ignore any patches where commit subject matches given string',
         'ltscore': 'Only show patches with a score less than this value',
         'byuser': 'Only show patches from this user',
         'excludeuser': 'Do not show patches from this user (username should be lowercase)',
@@ -198,6 +206,7 @@ def get_parser():
     parser.add_argument('--pattern', help=help['pattern'])
     parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
     parser.add_argument('--reviewee', help=help['reviewee'])
+    parser.add_argument('--ignorepattern', help=help['ignorepattern'])
     return parser
 
 def determine_project(parser, args):
