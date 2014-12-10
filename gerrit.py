@@ -48,10 +48,14 @@ def calculate_age(timestamp):
 def calculate_score(change):
     #go through reviews..
     reviews = change["labels"]["Code-Review"]
+    verified = change["labels"]["Verified"]
     likes = 0
     dislikes = 0
     status = 0
     reviewers = []
+
+    if "rejected" in verified:
+        dislikes += 1
 
     if "approved" in reviews:
         likes += 2
