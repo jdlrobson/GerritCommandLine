@@ -31,7 +31,8 @@ def get_project():
 
     #Launch the shell command:
     output, error = process.communicate()
-    return "/".join( output.split('/')[-3:] ).replace( '\n', '' )
+    # protocol, empty character between //, host [everything else is the project]
+    return "/".join( output.split('/')[3:] ).replace( '\n', '' )
 
 def calculate_age(timestamp):
     time_string = timestamp[0:18]
