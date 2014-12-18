@@ -95,6 +95,9 @@ def filter_patches(patches, args):
         else:
             return False
 
+    def filter_by_branch(patch):
+        return patch['branch'] == args.branch
+
     def filter_by_user(patch):
         if args.excludeuser:
             return patch['user'].lower() not in args.excludeuser
@@ -119,6 +122,7 @@ def filter_patches(patches, args):
     for patch in patches:
         if filter_by_score(patch) and \
            filter_by_pattern(patch) and \
+           filter_by_branch(patch) and \
            filter_by_user(patch) and filter_by_age(patch):
             result.append(patch)
     return result
@@ -133,6 +137,7 @@ def get_patches(url):
 
         patch = {"user": user,
                  "subject": subj,
+                 "branch": change['branch'],
                  "project": change["project"],
                  "score": calculate_score(change),
                  "id": str(number),
@@ -193,6 +198,7 @@ def get_parser():
         'gtage': 'Only show patches with an age greater than this value',
         'list': 'List all available projects',
         'pattern': 'When used alongside list shows only project names that contain the given string',
+        'branch': 'When used only shows patches on a certain branch',
         'show': 'Show additional information. Valid values: url, id'
     }
     parser = argparse.ArgumentParser()
@@ -212,6 +218,7 @@ def get_parser():
     parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
     parser.add_argument('--reviewee', help=help['reviewee'])
     parser.add_argument('--ignorepattern', help=help['ignorepattern'])
+    parser.add_argument('--branch', help=help['branch'], default="master")
     return parser
 
 def determine_project(parser, args):
