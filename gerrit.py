@@ -135,13 +135,21 @@ def get_patches(url):
         number = change["_number"]
         url = 'https://gerrit.wikimedia.org/r/%s' % number
 
+        reviews = change["labels"]["Code-Review"]
+        approved = None
+
+        if "approved" in reviews:
+            approved = reviews["approved"]["name"]
+
         patch = {"user": user,
                  "subject": subj,
                  "branch": change['branch'],
                  "project": change["project"],
                  "score": calculate_score(change),
+                 "approved": approved,
                  "id": str(number),
                  "url": url,
+                 "_sortkey": change["_sortkey"],
                  "age": calculate_age(change["created"])}
         patches.append(patch)
     patches = sorted(patches,
@@ -154,6 +162,11 @@ def get_incoming_patches(reviewer, project=None):
         params += '+project:"%s"'% project
 
     url = 'https://gerrit.wikimedia.org/r/changes/?q=%s&n=25&O=1'%params
+    return get_patches(url)
+
+def get_project_merged_patches(project):
+    url = "https://gerrit.wikimedia.org/r/changes/?q=status:merged+project:" \
+        + project + "&n=200&O=1"
     return get_patches(url)
 
 def get_project_patches(project):
@@ -199,6 +212,7 @@ def get_parser():
         'list': 'List all available projects',
         'pattern': 'When used alongside list shows only project names that contain the given string',
         'branch': 'When used only shows patches on a certain branch',
+        'report': 'Generates a report on the current repository',
         'show': 'Show additional information. Valid values: url, id'
     }
     parser = argparse.ArgumentParser()
@@ -218,8 +232,52 @@ def get_parser():
     parser.add_argument('--show', help=help['show'], type=str, action="append", default=[])
     parser.add_argument('--reviewee', help=help['reviewee'])
     parser.add_argument('--ignorepattern', help=help['ignorepattern'])
+    parser.add_argument('--report', help=help['report'])
     parser.add_argument('--branch', help=help['branch'], default="master")
     return parser
+
+def do_report(project):
+    patches = get_project_merged_patches(project) + get_project_patches( project )
+    approvers = {}
+    submitters = {}
+
+    for patch in patches:
+        name = patch["approved"]
+        if name:
+            if name in approvers:
+                approvers[name] += 1
+            else:
+                approvers[name] = 1
+
+        name = patch["user"]
+        if patch["score"] > -2:
+            if name in submitters:
+                submitters[name] += 1
+            else:
+                health = 1
+                submitters[name] = 1
+
+    info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
+    print "Top +2ers:"
+    for name,num in info:
+        print "%s: %s patches" % ( name, num )
+    print '\n'
+    print "Top patch authors:"
+    info = sorted(submitters.items(), key=operator.itemgetter(1), reverse=True)
+    for name,num in info:
+        print "%s: %s patches" % ( name, num )
+    print '\n'
+    print "Happiness:"
+    for name, num in submitters.items():
+        if name in approvers:
+            num2 = approvers[name]
+            score = float(num) / float(num2)
+            score = '%.2f'% score
+        else:
+            score = 'Infinitely'
+            happy = True
+
+        print '%s: %s happy' % ( name, score )
 
 def determine_project(parser, args):
     if args.project:
@@ -250,7 +308,11 @@ if __name__ == '__main__':
                 print "Provide a project name as a parameter e.g. mediawiki/core"
                 parser.print_help()
                 sys.exit()
-        patches = get_project_patches(project)
+        if args.report:
+            do_report(project)
+            sys.exit()
+        else:
+            patches = get_project_patches(project)
 
     RED = '\033[91m'
     GREEN = '\033[92m'
