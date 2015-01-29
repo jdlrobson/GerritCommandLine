@@ -166,6 +166,8 @@ def get_patches(url):
                  "url": url,
                  "_sortkey": change["_sortkey"],
                  "age": age,
+                 "created": change["created"],
+                 "updated": change["updated"],
                  "lifespan": lifespan
                  }
         patches.append(patch)
@@ -227,7 +229,8 @@ def get_parser():
         'list': 'List all available projects',
         'pattern': 'When used alongside list shows only project names that contain the given string',
         'branch': 'When used only shows patches on a certain branch',
-        'report': 'Generates a report on the current repository',
+        'report': 'Generates a report on the current repository. Values: [all]|summary',
+        'sample_size': 'Where applicable control the sample size of patchsets to query against',
         'show': 'Show additional information. Valid values: url, id'
     }
     parser = argparse.ArgumentParser()
@@ -249,24 +252,27 @@ def get_parser():
     parser.add_argument('--ignorepattern', help=help['ignorepattern'])
     parser.add_argument('--report', help=help['report'])
     parser.add_argument('--branch', help=help['branch'], default="master")
+    parser.add_argument('--sample_size', help=help['sample_size'], type=int, default=250)
     return parser
 
-def do_report(project):
-    merged_patches = get_project_merged_patches(project)
-    open_patches = get_project_patches( project )
+def do_report(project, sample_size, report_mode='all'):
+    merged_patches = get_project_merged_patches(project, sample_size)
+    open_patches = get_project_patches(project, sample_size)
     patches = open_patches + merged_patches
     approvers = {}
     submitters = {}
     total = 0
+    patches_by_bots = 0
+    print '<pre>Project: %s'%project
     print '%s patches analysed (%s open, %s merged)'% (len(patches), len(open_patches), len(merged_patches))
-    most_neglected = sorted(patches, key=operator.itemgetter("lifespan"), reverse=True)
-    print "\nMost neglected patches:"
-    for patch in most_neglected[0:5]:
-        print "\t%s (%s days)"%(patch['subject'], patch["lifespan"])
+    info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
 
     for patch in patches:
         name = patch["approved"]
-        total += patch["lifespan"]
+        if name == "L10n-bot":
+            patches_by_bots += 1
+        else:
+            total += patch["lifespan"]
         if name:
             if name in approvers:
                 approvers[name] += 1
@@ -281,8 +287,20 @@ def do_report(project):
                 health = 1
                 submitters[name] = 1
 
-    info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
-    print "\nAverage review time: %s days" % ( total / len(patches) )
+    print "Average review time: %s days" % ( total / ( len(patches) - patches_by_bots ) )
+    most_neglected = sorted(open_patches, key=operator.itemgetter("lifespan"), reverse=True)
+    if len(most_neglected) > 0:
+        print "Oldest open patch: %s (%s days) - %s"%( most_neglected[0]['subject'],
+            most_neglected[0]['lifespan'], most_neglected[0]['url'] )
+    print '</pre>\n'
+    if report_mode == 'summary':
+        return
+
+    # do more detailed report
+    print "\nMost neglected patches:"
+    for patch in most_neglected[0:5]:
+        print "\t%s (%s days)"%(patch['subject'], patch["lifespan"])
+
     print "\nTop +2ers:"
     for name,num in info:
         print "\t%s: %s patches" % ( name, num )
@@ -334,7 +352,7 @@ if __name__ == '__main__':
                 parser.print_help()
                 sys.exit()
         if args.report:
-            do_report(project)
+            do_report(project, args.sample_size, args.report)
             sys.exit()
         else:
             patches = get_project_patches(project)
