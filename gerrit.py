@@ -262,7 +262,7 @@ def do_report(project):
     most_neglected = sorted(patches, key=operator.itemgetter("lifespan"), reverse=True)
     print "\nMost neglected patches:"
     for patch in most_neglected[0:5]:
-        print "%s (%s days)"%(patch['subject'], patch["lifespan"])
+        print "\t%s (%s days)"%(patch['subject'], patch["lifespan"])
 
     for patch in patches:
         name = patch["approved"]
@@ -282,15 +282,15 @@ def do_report(project):
                 submitters[name] = 1
 
     info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
-    print "Average review time: %s days" % ( total / len(patches) )
-    print "Top +2ers:"
+    print "\nAverage review time: %s days" % ( total / len(patches) )
+    print "\nTop +2ers:"
     for name,num in info:
         print "\t%s: %s patches" % ( name, num )
     print '\n'
     print "Top patch authors:"
     info = sorted(submitters.items(), key=operator.itemgetter(1), reverse=True)
     for name,num in info:
-        print "%s: %s patches" % ( name, num )
+        print "\t%s: %s patches" % ( name, num )
     print '\n'
     print "Happiness:"
     for name, num in submitters.items():
@@ -302,7 +302,7 @@ def do_report(project):
             score = 'Infinitely'
             happy = True
 
-        print '%s: %s happy' % ( name, score )
+        print '\t%s: %s happy' % ( name, score )
 
 def determine_project(parser, args):
     if args.project:
