@@ -34,11 +34,15 @@ def get_project():
     # protocol, empty character between //, host [everything else is the project]
     return "/".join( output.split('/')[3:] ).replace( '\n', '' )
 
-def calculate_age(timestamp):
+def calculate_age(timestamp, timestamp2=None):
     time_string = timestamp[0:18]
     format = "%Y-%m-%d %H:%M:%S"
     d = dt.strptime(time_string, format)
-    delta = d.now() - d
+    if timestamp2:
+        fromd = dt.strptime(timestamp2[0:18], format)
+    else:
+        fromd = d.now()
+    delta = fromd - d
     age = delta.days
     if age < 0:
         age = 0
@@ -146,6 +150,12 @@ def get_patches(url):
         if "approved" in reviews:
             approved = reviews["approved"]["name"]
 
+        age = calculate_age(change["created"])
+        if change["status"] == u"MERGED":
+            lifespan = calculate_age(change["created"], change["updated"])
+        else:
+            lifespan = age
+
         patch = {"user": user,
                  "subject": subj,
                  "branch": change['branch'],
@@ -155,7 +165,9 @@ def get_patches(url):
                  "id": str(number),
                  "url": url,
                  "_sortkey": change["_sortkey"],
-                 "age": calculate_age(change["created"])}
+                 "age": age,
+                 "lifespan": lifespan
+                 }
         patches.append(patch)
     patches = sorted(patches,
                      key=operator.itemgetter("score", "age"), reverse=True)
@@ -242,12 +254,21 @@ def get_parser():
     return parser
 
 def do_report(project):
-    patches = get_project_merged_patches(project) + get_project_patches( project )
+    merged_patches = get_project_merged_patches(project)
+    open_patches = get_project_patches( project )
+    patches = open_patches + merged_patches
     approvers = {}
     submitters = {}
+    total = 0
+    print '%s patches analysed (%s open, %s merged)'% (len(patches), len(open_patches), len(merged_patches))
+    most_neglected = sorted(patches, key=operator.itemgetter("lifespan"), reverse=True)
+    print "\nMost neglected patches:"
+    for patch in most_neglected[0:5]:
+        print "%s (%s days)"%(patch['subject'], patch["lifespan"])
 
     for patch in patches:
         name = patch["approved"]
+        total += patch["lifespan"]
         if name:
             if name in approvers:
                 approvers[name] += 1
@@ -263,6 +284,7 @@ def do_report(project):
                 submitters[name] = 1
 
     info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
+    print "Average review time: %s days" % ( total / len(patches) )
     print "Top +2ers:"
     for name,num in info:
         print "%s: %s patches" % ( name, num )
