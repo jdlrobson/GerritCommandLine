@@ -181,14 +181,12 @@ def get_incoming_patches(reviewer, project=None):
     url = 'https://gerrit.wikimedia.org/r/changes/?q=%s&n=25&O=1'%params
     return get_patches(url)
 
-def get_project_merged_patches(project):
-    url = "https://gerrit.wikimedia.org/r/changes/?q=status:merged+project:" \
-        + project + "&n=200&O=1"
+def get_project_merged_patches(project, number=250):
+    url = "https://gerrit.wikimedia.org/r/changes/?q=status:merged+project:%s&n=%s&O=1"%( project, number )
     return get_patches(url)
 
-def get_project_patches(project):
-    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:" \
-        + project + "&n=25&O=1"
+def get_project_patches(project, number=250):
+    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:%s&n=%s&O=1"%( project, number )
     return get_patches(url)
 
 def choose_project(match_pattern=None):
@@ -287,7 +285,7 @@ def do_report(project):
     print "Average review time: %s days" % ( total / len(patches) )
     print "Top +2ers:"
     for name,num in info:
-        print "%s: %s patches" % ( name, num )
+        print "\t%s: %s patches" % ( name, num )
     print '\n'
     print "Top patch authors:"
     info = sorted(submitters.items(), key=operator.itemgetter(1), reverse=True)
