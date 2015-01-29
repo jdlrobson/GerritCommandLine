@@ -52,7 +52,11 @@ def calculate_age(timestamp, timestamp2=None):
 def calculate_score(change):
     #go through reviews..
     labels = change["labels"]
-    reviews = labels["Code-Review"]
+    if "Code-Review" in labels:
+        reviews = labels["Code-Review"]
+    else:
+        reviews = []
+
     if "Verified" in labels:
         verified = labels["Verified"]
     else:
