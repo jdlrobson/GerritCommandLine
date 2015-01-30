@@ -266,37 +266,39 @@ def do_report(project, sample_size, report_mode='all'):
     approvers = {}
     submitters = {}
     total = 0
-    patches_by_bots = 0
-    print '<pre>Project: %s'%project
-    print '%s patches analysed (%s open, %s merged)'% (len(patches), len(open_patches), len(merged_patches))
+    patches_self_merged = 0
+    print "|-"
+    print '| %s '%project
+    print '| %s || %s || %s ' % (len(patches), len(merged_patches), len(open_patches))
     info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
 
     for patch in patches:
-        name = patch["approved"]
-        if name == "L10n-bot":
-            patches_by_bots += 1
+        approver = patch["approved"]
+        submitter = patch["user"]
+        if approver == submitter or submitter == 'L10n-bot':
+            patches_self_merged += 1
         else:
             total += patch["lifespan"]
-        if name:
-            if name in approvers:
-                approvers[name] += 1
+        if approver:
+            if approver in approvers:
+                approvers[approver] += 1
             else:
-                approvers[name] = 1
+                approvers[approver] = 1
 
-        name = patch["user"]
         if patch["score"] > -2:
-            if name in submitters:
-                submitters[name] += 1
+            if submitter in submitters:
+                submitters[submitter] += 1
             else:
                 health = 1
-                submitters[name] = 1
+                submitters[submitter] = 1
 
-    print "Average review time: %s days" % ( total / ( len(patches) - patches_by_bots ) )
+    print "| %s " % ( total / ( len(patches) - patches_self_merged ) )
     most_neglected = sorted(open_patches, key=operator.itemgetter("lifespan"), reverse=True)
     if len(most_neglected) > 0:
-        print "Oldest open patch: %s (%s days) - %s"%( most_neglected[0]['subject'],
-            most_neglected[0]['lifespan'], most_neglected[0]['url'] )
-    print '</pre>\n'
+        print "| [%s %s] (%s days)" %( most_neglected[0]['url'], most_neglected[0]['subject'],
+            most_neglected[0]['lifespan'] )
+    else:
+        print "|"
     if report_mode == 'summary':
         return
 
