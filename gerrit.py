@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# -*- coding: utf-8  -*-
 '''
 Copyright [2013] [Jon Robson]
 
@@ -148,10 +148,13 @@ def get_patches(url):
         number = change["_number"]
         url = 'https://gerrit.wikimedia.org/r/%s' % number
 
-        reviews = change["labels"]["Code-Review"]
+        try:
+            reviews = change["labels"]["Code-Review"]
+        except KeyError:
+            reviews = None
         approved = None
 
-        if "approved" in reviews:
+        if reviews and "approved" in reviews:
             approved = reviews["approved"]["name"]
 
         age = calculate_age(change["created"])
@@ -233,7 +236,7 @@ def get_parser():
         'list': 'List all available projects',
         'pattern': 'When used alongside list shows only project names that contain the given string',
         'branch': 'When used only shows patches on a certain branch',
-        'report': 'Generates a report on the current repository. Values: [all]|summary',
+        'report': 'Generates a report on the current repository. Values: [all]|summary|header',
         'sample_size': 'Where applicable control the sample size of patchsets to query against',
         'show': 'Show additional information. Valid values: url, id'
     }
@@ -260,6 +263,17 @@ def get_parser():
     return parser
 
 def do_report(project, sample_size, report_mode='all'):
+
+    if report_mode == 'header':
+        print """{| class="wikitable sortable"
+! Project
+! Changesets
+! Merged
+! Open
+! Average review time
+! Oldest"""
+        return
+
     merged_patches = get_project_merged_patches(project, sample_size)
     open_patches = get_project_patches(project, sample_size)
     patches = open_patches + merged_patches
@@ -268,8 +282,8 @@ def do_report(project, sample_size, report_mode='all'):
     total = 0
     patches_self_merged = 0
     print "|-"
-    print '| %s '%project
-    print '| %s || %s || %s ' % (len(patches), len(merged_patches), len(open_patches))
+    print '| %s' %project
+    print '| %s || %s || %s' % (len(patches), len(merged_patches), len(open_patches))
     info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
 
     for patch in patches:
@@ -292,11 +306,15 @@ def do_report(project, sample_size, report_mode='all'):
                 health = 1
                 submitters[submitter] = 1
 
-    print "| %s " % ( total / ( len(patches) - patches_self_merged ) )
+    reviews = ( len(patches) - patches_self_merged )
+    if reviews > 0:
+        print "| %s " % ( total / reviews )
+    else:
+        print "| –"
     most_neglected = sorted(open_patches, key=operator.itemgetter("lifespan"), reverse=True)
     if len(most_neglected) > 0:
-        print "| [%s %s] (%s days)" %( most_neglected[0]['url'], most_neglected[0]['subject'],
-            most_neglected[0]['lifespan'] )
+        print "| %s days, [%s %s]" %( most_neglected[0]['lifespan'], most_neglected[0]['url'],
+                                      most_neglected[0]['subject'] )
     else:
         print "|"
     if report_mode == 'summary':
