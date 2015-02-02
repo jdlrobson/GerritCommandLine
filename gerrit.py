@@ -269,7 +269,6 @@ def do_report(project, sample_size, report_mode='all'):
     patches_by_bots = 0
     print '<pre>Project: %s'%project
     print '%s patches analysed (%s open, %s merged)'% (len(patches), len(open_patches), len(merged_patches))
-    info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
 
     for patch in patches:
         name = patch["approved"]
@@ -306,6 +305,7 @@ def do_report(project, sample_size, report_mode='all'):
         print "\t%s (%s days)"%(patch['subject'], patch["lifespan"])
 
     print "\nTop +2ers:"
+    info = sorted(approvers.items(), key=operator.itemgetter(1), reverse=True)
     for name,num in info:
         print "\t%s: %s patches" % ( name, num )
     print '\n'
