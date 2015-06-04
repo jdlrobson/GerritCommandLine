@@ -25,12 +25,16 @@ import subprocess
 import sys
 import argparse
 
+HOST_NAME = 'gerrit.wikimedia.org'
+
 def get_project():
     command = "git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//'"
     process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
     #Launch the shell command:
     output, error = process.communicate()
+    if output[0:4] == 'git/':
+		output = output[4:]
     # protocol, empty character between //, host [everything else is the project]
     return "/".join( output.split('/')[3:] ).replace( '\n', '' )
 
@@ -146,7 +150,7 @@ def get_patches(url):
         user = change["owner"]["name"]
         subj = change["subject"]
         number = change["_number"]
-        url = 'https://gerrit.wikimedia.org/r/%s' % number
+        url = 'https://%s/r/%s' % (HOST_NAME, number)
 
         reviews = change["labels"]["Code-Review"]
         approved = None
@@ -184,19 +188,19 @@ def get_incoming_patches(reviewer, project=None):
     if project:
         params += '+project:"%s"'% project
 
-    url = 'https://gerrit.wikimedia.org/r/changes/?q=%s&n=25&O=1'%params
+    url = 'https://$s/r/changes/?q=%s&n=25&O=1'%( HOST_NAME, params )
     return get_patches(url)
 
 def get_project_merged_patches(project, number=250):
-    url = "https://gerrit.wikimedia.org/r/changes/?q=status:merged+project:%s&n=%s&O=1"%( project, number )
+    url = "https://%s/r/changes/?q=status:merged+project:%s&n=%s&O=1"%( HOST_NAME, project, number )
     return get_patches(url)
 
 def get_project_patches(project, number=250):
-    url = "https://gerrit.wikimedia.org/r/changes/?q=status:open+project:%s&n=%s&O=1"%( project, number )
+    url = "https://%s/r/changes/?q=status:open+project:%s&n=%s&O=1"%( HOST_NAME, project, number )
     return get_patches(url)
 
 def choose_project(match_pattern=None):
-    url = "https://gerrit.wikimedia.org/r/projects/?type=ALL&all&d"
+    url = "https://%s/r/projects/?type=ALL&all&d"%( HOST_NAME )
     projects = query_gerrit(url)
     keys = sorted(iter(projects))
     index = 0
@@ -220,7 +224,7 @@ def choose_project(match_pattern=None):
 
 def get_parser():
     help = {
-        'project': 'A valid project name on http://gerrit.wikimedia.org',
+        'project': 'A valid project name on http://%s'%( HOST_NAME ),
         'reviewee': 'Show all patches for a given reviewee',
         'action': 'Action to perform on patchset. Values: checkout|open',
         'gtscore': 'Only show patches with a score greater than this value',
@@ -235,6 +239,8 @@ def get_parser():
         'branch': 'When used only shows patches on a certain branch',
         'report': 'Generates a report on the current repository. Values: [all]|summary',
         'sample_size': 'Where applicable control the sample size of patchsets to query against',
+        'review': 'Send a +1, -1, +2 or +2 to Gerrit',
+        'message': 'Message to send with your review.',
         'show': 'Show additional information. Valid values: url, id'
     }
     parser = argparse.ArgumentParser()
@@ -256,8 +262,19 @@ def get_parser():
     parser.add_argument('--ignorepattern', help=help['ignorepattern'])
     parser.add_argument('--report', help=help['report'])
     parser.add_argument('--branch', help=help['branch'], default="master")
+    parser.add_argument('--review', help=help['review'])
+    parser.add_argument('--message', help=help['message'])
     parser.add_argument('--sample_size', help=help['sample_size'], type=int, default=250)
     return parser
+
+def submit_review( score, message ):
+    process = subprocess.Popen('git rev-parse HEAD', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    commit = output.strip()
+    msg = "'%s'"%message
+    subprocess.call(['ssh', '-p 29418',
+        'gerrit.wikimedia.org', 'gerrit', 'review',
+        '--code-review', score, '--message', msg, commit])
 
 def do_report(project, sample_size, report_mode='all'):
     merged_patches = get_project_merged_patches(project, sample_size)
@@ -341,6 +358,10 @@ def determine_project(parser, args):
 if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
+    if args.review:
+        submit_review( args.review, args.message )
+        sys.exit()
+
     project = determine_project(parser, args)
     if args.reviewee:
         if not project:
