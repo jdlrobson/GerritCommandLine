@@ -34,9 +34,12 @@ def get_project():
     #Launch the shell command:
     output, error = process.communicate()
     if output[0:4] == 'git/':
-		output = output[4:]
+        output = output[4:]
     # protocol, empty character between //, host [everything else is the project]
-    return "/".join( output.split('/')[3:] ).replace( '\n', '' )
+    name = "/".join( output.split('/')[3:] ).replace( '\n', '' )
+    if name[0:4] == 'git/':
+        name = name[4:]
+    return name
 
 def calculate_age(timestamp, timestamp2=None):
     time_string = timestamp[0:18]
