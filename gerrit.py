@@ -39,6 +39,8 @@ def get_project():
     name = "/".join( output.split('/')[3:] ).replace( '\n', '' )
     if name[0:4] == 'git/':
         name = name[4:]
+    if name[0:2] == 'r/':
+        name = name[2:]
     return name
 
 def calculate_age(timestamp, timestamp2=None):
