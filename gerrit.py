@@ -276,10 +276,13 @@ def submit_review( score, message ):
     process = subprocess.Popen('git rev-parse HEAD', stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = process.communicate()
     commit = output.strip()
-    msg = "'%s'"%message
-    subprocess.call(['ssh', '-p 29418',
+    args = ['ssh', '-p 29418',
         'gerrit.wikimedia.org', 'gerrit', 'review',
-        '--code-review', score, '--message', msg, commit])
+        '--code-review', score ]
+    if msg:
+        args.extend( [ '--message', "\"" + msg + "\"" ] )
+    args.append( commit )
+    subprocess.Popen( args ).communicate()
 
 def do_report(project, sample_size, report_mode='all'):
     merged_patches = get_project_merged_patches(project, sample_size)
@@ -364,7 +367,11 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
     if args.review:
-        submit_review( args.review, args.message )
+        if args.message == None:
+            msg = ''
+        else:
+            msg = args.message
+        submit_review( args.review, msg )
         sys.exit()
 
     project = determine_project(parser, args)
