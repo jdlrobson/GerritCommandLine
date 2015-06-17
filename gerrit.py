@@ -246,6 +246,7 @@ def get_parser():
         'sample_size': 'Where applicable control the sample size of patchsets to query against',
         'review': 'Send a +1, -1, +2 or +2 to Gerrit',
         'message': 'Message to send with your review.',
+        'feeling_lucky': 'Automatically download the first patch.',
         'show': 'Show additional information. Valid values: url, id'
     }
     parser = argparse.ArgumentParser()
@@ -270,6 +271,7 @@ def get_parser():
     parser.add_argument('--review', help=help['review'])
     parser.add_argument('--message', help=help['message'])
     parser.add_argument('--sample_size', help=help['sample_size'], type=int, default=250)
+    parser.add_argument('--feeling_lucky', help=help['feeling_lucky'])
     return parser
 
 def submit_review( score, message ):
@@ -363,6 +365,47 @@ def determine_project(parser, args):
 
     return project
 
+def prompt_user_for_patch( action, patches, show ):
+    #start on 1 since 1 is the easiest key to press on the keyboard
+    key = 1
+    last_score = 3
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    GRAY = '\033[90m'
+    ENDC = '\033[0m'
+    BOLD = "\033[1m"
+    print 'Open patchsets listed below in priority order:\n'
+    for patch in patches:
+        score = patch["score"]
+        if score < 0 and last_score > -1:
+            # add an additional new line when moving down
+            # from positive to negative scores
+            # to give better visual separation of patches
+            print '\n'
+        last_score = score
+        if score < 0:
+            color = RED
+        else:
+            color = GREEN
+        score = '%s%s%s%s' % (color, BOLD, score, ENDC)
+        string_args = (key, patch["subject"], patch["user"],
+                patch["age"], score)
+        print '%02d: %s (by %s, %s days old) [%s]' % string_args
+        if 'url' in show:
+            print '\t%s%s%s'% (GRAY, patch['url'], ENDC )
+        if 'id' in show:
+            print '\t%s%s%s'% (GRAY, patch['id'], ENDC )
+        if 'project' in show:
+            print '\t%s%s%s'% (GRAY, patch['project'], ENDC )
+        key += 1
+    print '\n'
+    if action == 'open':
+        prompt = 'Enter number of patchset to open'
+    else:
+        prompt = 'Enter number of patchset to checkout'
+    prompt += ' (Press enter to exit):'
+    return raw_input(prompt)
+
 if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
@@ -394,11 +437,6 @@ if __name__ == '__main__':
         else:
             patches = get_project_patches(project)
 
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    GRAY = '\033[90m'
-    ENDC = '\033[0m'
-    BOLD = "\033[1m"
     try:
         action = args.action
         if action is None:
@@ -415,40 +453,12 @@ if __name__ == '__main__':
     if len(patches) == 0:
         print "No patches met the filter."
         sys.exit()
-    #start on 1 since 1 is the easiest key to press on the keyboard
-    key = 1
-    last_score = 3
-    print 'Open patchsets listed below in priority order:\n'
-    for patch in patches:
-        score = patch["score"]
-        if score < 0 and last_score > -1:
-            # add an additional new line when moving down
-            # from positive to negative scores
-            # to give better visual separation of patches
-            print '\n'
-        last_score = score
-        if score < 0:
-            color = RED
-        else:
-            color = GREEN
-        score = '%s%s%s%s' % (color, BOLD, score, ENDC)
-        string_args = (key, patch["subject"], patch["user"],
-                patch["age"], score)
-        print '%02d: %s (by %s, %s days old) [%s]' % string_args
-        if 'url' in args.show:
-            print '\t%s%s%s'% (GRAY, patch['url'], ENDC )
-        if 'id' in args.show:
-            print '\t%s%s%s'% (GRAY, patch['id'], ENDC )
-        if 'project' in args.show:
-            print '\t%s%s%s'% (GRAY, patch['project'], ENDC )
-        key += 1
-    print '\n'
-    if action == 'open':
-        prompt = 'Enter number of patchset to open'
+
+    if args.feeling_lucky:
+        choice = 1
     else:
-        prompt = 'Enter number of patchset to checkout'
-    prompt += ' (Press enter to exit):'
-    choice = raw_input(prompt)
+        choice = prompt_user_for_patch( action, patches, args.show )
+
     try:
         change = patches[int(choice) - 1]
         if action == 'open':
