@@ -282,7 +282,7 @@ def submit_review( score, message ):
         'gerrit.wikimedia.org', 'gerrit', 'review',
         '--code-review', score ]
     if msg:
-        args.extend( [ '--message', "\"" + msg + "\"" ] )
+        args.extend( [ '--message', "\"" + msg.replace( '"', '' ).replace( "'", '' ) + "\"" ] )
     args.append( commit )
     subprocess.Popen( args ).communicate()
 
