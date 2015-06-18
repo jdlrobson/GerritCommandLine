@@ -430,7 +430,7 @@ if __name__ == '__main__':
             if project is None:
                 print "Provide a project name as a parameter e.g. mediawiki/core"
                 parser.print_help()
-                sys.exit()
+                sys.exit(1)
         if args.report:
             do_report(project, args.sample_size, args.report)
             sys.exit()
@@ -447,12 +447,12 @@ if __name__ == '__main__':
     if len(patches) == 0:
         print "No patches found for project %s \
 - did you type it correctly?" % project
-        sys.exit()
+        sys.exit(1)
 
     patches = filter_patches(patches, args)
     if len(patches) == 0:
         print "No patches met the filter."
-        sys.exit()
+        sys.exit(1)
 
     if args.feeling_lucky:
         choice = 1
