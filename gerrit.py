@@ -26,6 +26,7 @@ import sys
 import argparse
 
 HOST_NAME = 'gerrit.wikimedia.org'
+QUERY_SUFFIX = '&o=DETAILED_ACCOUNTS&O=1'
 
 def get_project():
     command = "git remote -v | head -n1 | awk '{print $2}' | sed -e 's,.*:\(.*/\)\?,,' -e 's/\.git$//'"
@@ -149,10 +150,17 @@ def filter_patches(patches, args):
             result.append(patch)
     return result
 
+def get_name(userInfo):
+    if "name" in userInfo:
+        return userInfo["name"]
+    else:
+        return userInfo["_account_id"]
+
 def get_patches(url):
     patches = []
     for change in query_gerrit(url):
-        user = change["owner"]["name"]
+        user = get_name(change["owner"])
+
         subj = change["subject"]
         number = change["_number"]
         url = 'https://%s/r/%s' % (HOST_NAME, number)
@@ -161,7 +169,8 @@ def get_patches(url):
         approved = None
 
         if "approved" in reviews:
-            approved = reviews["approved"]["name"]
+            review = reviews["approved"]
+            approved = get_name(review)
 
         age = calculate_age(change["created"])
         if change["status"] == u"MERGED":
@@ -177,7 +186,6 @@ def get_patches(url):
                  "approved": approved,
                  "id": str(number),
                  "url": url,
-                 "_sortkey": change["_sortkey"],
                  "age": age,
                  "created": change["created"],
                  "updated": change["updated"],
@@ -193,15 +201,15 @@ def get_incoming_patches(reviewer, project=None):
     if project:
         params += '+project:"%s"'% project
 
-    url = 'https://$s/r/changes/?q=%s&n=25&O=1'%( HOST_NAME, params )
+    url = 'https://$s/r/changes/?q=%s&n=25%s'%( HOST_NAME, params, QUERY_SUFFIX )
     return get_patches(url)
 
 def get_project_merged_patches(project, number=250):
-    url = "https://%s/r/changes/?q=status:merged+project:%s&n=%s&O=1"%( HOST_NAME, project, number )
+    url = "https://%s/r/changes/?q=status:merged+project:%s&n=%s%s"%( HOST_NAME, project, number, QUERY_SUFFIX )
     return get_patches(url)
 
 def get_project_patches(project, number=250):
-    url = "https://%s/r/changes/?q=status:open+project:%s&n=%s&O=1"%( HOST_NAME, project, number )
+    url = "https://%s/r/changes/?q=status:open+project:%s&n=%s%s"%( HOST_NAME, project, number, QUERY_SUFFIX )
     return get_patches(url)
 
 def choose_project(match_pattern=None):
