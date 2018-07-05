@@ -24,3 +24,7 @@ All patchsets requesting review from Jdlrobson  across all repositories with a p
 
 All patchsets requesting review from Jdlrobson in the core mediawiki repository with a positive score
 `gerrit.py --reviewee jdlrobson --gtscore -1 --project mediawiki/core`
+
+Review a patch
+`gerrit.py --review -1 --message "You should fix this"`
+`gerrit.py --review 2 --message "Best change ever"`
