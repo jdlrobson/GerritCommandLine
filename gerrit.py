@@ -310,7 +310,9 @@ def submit_review( score, message ):
     subprocess.Popen( args ).communicate()
 
 def do_report(project, sample_size, report_mode='all'):
-
+    if report_mode not in [ 'all', 'summary' ]:
+        print "Unknown report mode - please use summary or all!"
+        return
     print """{| class="wikitable sortable"
 ! Project
 ! Changesets
