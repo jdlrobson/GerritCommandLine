@@ -136,6 +136,14 @@ def filter_patches(patches, args):
         else:
             return age > args.gtage
 
+    def filter_by_wip(patch):
+        if patch['wip'] and args.wip:
+            return True
+        elif patch['wip']:
+            return False
+        else:
+            return True
+
     def filter_by_pattern(patch):
         if args.ignorepattern:
             return args.ignorepattern not in patch['subject']
@@ -144,6 +152,7 @@ def filter_patches(patches, args):
 
     for patch in patches:
         if filter_by_score(patch) and \
+           filter_by_wip(patch) and \
            filter_by_pattern(patch) and \
            filter_by_branch(patch) and \
            filter_by_user(patch) and filter_by_age(patch):
@@ -180,6 +189,7 @@ def get_patches(url):
 
         patch = {"user": user,
                  "subject": subj,
+                 "wip": "work_in_progress" in change,
                  "branch": change['branch'],
                  "project": change["project"],
                  "score": calculate_score(change),
@@ -255,7 +265,8 @@ def get_parser():
         'review': 'Send a +1, -1, +2 or +2 to Gerrit',
         'message': 'Message to send with your review.',
         'feeling_lucky': 'Automatically download the first patch.',
-        'show': 'Show additional information. Valid values: url, id'
+        'show': 'Show additional information. Valid values: url, id',
+        'wip': 'Include patches which are WIP'
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--list', help=help['list'], type=bool, default=False)
@@ -263,6 +274,7 @@ def get_parser():
     parser.add_argument('positional_project', nargs='?', default=None,
                         help=help['project'])
     parser.add_argument('--action', help=help['action'], default='checkout')
+    parser.add_argument('--wip', help=help['wip'], default=None)
     parser.add_argument('--gtscore',
                         help=help['gtscore'], default=-3, type=int)
     parser.add_argument('--ltscore', help=help['gtscore'], default=3, type=int)
@@ -430,7 +442,7 @@ if __name__ == '__main__':
         if not project:
             args.show.append('project')
             args.excludeuser.append(args.reviewee.lower())
-        patches = get_incoming_patches(args.reviewee, project)
+        patches = get_incoming_patches(args.reviewee, project, args.wip)
     # A project is mandatory if no reviewee
     else:
         if project is None:
