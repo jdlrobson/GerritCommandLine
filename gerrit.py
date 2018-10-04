@@ -313,7 +313,7 @@ def submit_review( score, message ):
     output, error = process.communicate()
     commit = output.strip()
     args = ['ssh', '-p 29418',
-        'gerrit.wikimedia.org', 'gerrit', 'review',
+        HOST_NAME, 'gerrit', 'review',
         '--code-review', score ]
     if msg:
         args.extend( [ '--message', "\"" + msg.replace( '"', '' ).replace( "'", '' ) + "\"" ] )
