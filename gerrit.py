@@ -263,7 +263,7 @@ def get_parser():
         'list': 'List all available projects',
         'pattern': 'When used alongside list shows only project names that contain the given string',
         'branch': 'When used only shows patches on a certain branch',
-        'report': 'Generates a report on the current repository. Values: [all]|summary|header',
+        'report': 'Generates a report on the current repository. Values: [all]|summary',
         'sample_size': 'Where applicable control the sample size of patchsets to query against',
         'review': 'Send a +1, -1, +2 or +2 to Gerrit',
         'message': 'Message to send with your review.',
@@ -311,15 +311,13 @@ def submit_review( score, message ):
 
 def do_report(project, sample_size, report_mode='all'):
 
-    if report_mode == 'header':
-        print """{| class="wikitable sortable"
+    print """{| class="wikitable sortable"
 ! Project
 ! Changesets
 ! Merged
 ! Open
 ! Average review time
 ! Oldest"""
-        return
 
     merged_patches = get_project_merged_patches(project, sample_size)
     open_patches = get_project_patches(project, sample_size)
