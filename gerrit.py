@@ -25,7 +25,17 @@ import subprocess
 import sys
 import argparse
 
-HOST_NAME = 'gerrit.wikimedia.org'
+def get_host():
+    command = "git remote get-url origin"
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+    #Launch the shell command:
+    output, error = process.communicate()
+    proto_starts_at = output.find('//')
+    proto_ends_at = output.find('/',proto_starts_at+2)
+    return output[proto_starts_at + 2:proto_ends_at]
+
+HOST_NAME = get_host()
 QUERY_SUFFIX = '&o=DETAILED_ACCOUNTS&O=1'
 
 def get_project():
@@ -489,7 +499,12 @@ if __name__ == '__main__':
             do_report(project, args.sample_size, args.report)
             sys.exit()
         else:
-            patches = get_project_patches(project)
+            try:
+                patches = get_project_patches(project)
+            except ValueError:
+                print "Using %s"%HOST_NAME
+                print 'If incorrect use git remote set-url origin <host>'
+                sys.exit(1)
 
     try:
         action = args.action
