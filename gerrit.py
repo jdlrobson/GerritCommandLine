@@ -144,6 +144,12 @@ def filter_patches(patches, args):
         else:
             return True
 
+    def filter_by_mergeable(patch):
+        if args.mergeable:
+            return patch['mergeable']
+        else:
+            return True
+
     def filter_by_pattern(patch):
         if args.ignorepattern:
             return args.ignorepattern not in patch['subject']
@@ -153,6 +159,7 @@ def filter_patches(patches, args):
     for patch in patches:
         if filter_by_score(patch) and \
            filter_by_wip(patch) and \
+           filter_by_mergeable(patch) and \
            filter_by_pattern(patch) and \
            filter_by_branch(patch) and \
            filter_by_user(patch) and filter_by_age(patch):
@@ -200,6 +207,8 @@ def get_patches(url):
                  "id": str(number),
                  "url": url,
                  "age": age,
+                 "mergeable": "work_in_progress" not in change and \
+                    change["mergeable"],
                  "created": change["created"],
                  "updated": change["updated"],
                  "lifespan": lifespan
@@ -269,7 +278,8 @@ def get_parser():
         'message': 'Message to send with your review.',
         'feeling_lucky': 'Automatically download the first patch.',
         'show': 'Show additional information. Valid values: url, id',
-        'wip': 'Include patches which are WIP'
+        'wip': 'Include patches which are WIP',
+        'mergeable': 'Only include patchsets which are mergeable'
     }
     parser = argparse.ArgumentParser()
     parser.add_argument('--list', help=help['list'], type=bool, default=False)
@@ -278,6 +288,7 @@ def get_parser():
                         help=help['project'])
     parser.add_argument('--action', help=help['action'], default='checkout')
     parser.add_argument('--wip', help=help['wip'], default=None)
+    parser.add_argument('--mergeable', help=help['mergeable'], type=bool, default=False)
     parser.add_argument('--gtscore',
                         help=help['gtscore'], default=-3, type=int)
     parser.add_argument('--ltscore', help=help['gtscore'], default=3, type=int)
@@ -424,7 +435,9 @@ def prompt_user_for_patch( action, patches, show ):
             # to give better visual separation of patches
             print '\n'
         last_score = score
-        if score < 0:
+        if not patch["mergeable"]:
+            color = RED
+        elif score < 0:
             color = RED
         else:
             color = GREEN
